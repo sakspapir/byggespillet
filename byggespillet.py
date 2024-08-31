@@ -1,6 +1,7 @@
 import pygame
 import sys
-import json
+import os
+from PIL import Image
 
 # Initialize Pygame
 pygame.init()
@@ -21,9 +22,54 @@ stone_image = pygame.image.load('stone.png')
 bullet_image = pygame.image.load('bullet.png')
 monster_image = pygame.image.load('monster.png')
 
-# Load map from JSON file
-with open('map.json') as f:
-    game_map = json.load(f)['map']
+class Map:
+    def __init__(self, start_x, start_y):
+        self.current_x = start_x
+        self.current_y = start_y
+        self.maps = {}
+        self.load_all_maps()
+
+    def load_all_maps(self):
+        for filename in os.listdir('maps'):
+            if filename.startswith('map') and filename.endswith('.png'):
+                parts = filename[3:-4].split('-')
+                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                    x, y = int(parts[0]), int(parts[1])
+                    self.maps[(x, y)] = self.load_map_from_png(os.path.join('maps', filename))
+
+    def load_map_from_png(self, file_path):
+        image = Image.open(file_path)
+        pixels = image.load()
+        width, height = image.size
+        game_map = []
+        for y in range(height):
+            row = []
+            for x in range(width):
+                r, g, b = pixels[x, y][:3]
+                if (r, g, b) == (128, 128, 128):  # Grey color for stone tiles
+                    row.append('s')
+                elif (r, g, b) == (0, 255, 0):  # Green color for grass tiles
+                    row.append('g')
+                else:
+                    row.append('g')  # Default to grass if color is not recognized
+            game_map.append(row)
+        return game_map
+
+    def get_current_map(self):
+        return self.maps.get((self.current_x, self.current_y))
+
+    def move_to_adjacent_map(self, direction):
+        if direction == 'left':
+            self.current_x -= 1
+        elif direction == 'right':
+            self.current_x += 1
+        elif direction == 'up':
+            self.current_y -= 1
+        elif direction == 'down':
+            self.current_y += 1
+        return self.get_current_map()
+
+game_map = Map(6, 9)  # Initialize with starting map coordinates
 
 # Create screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -55,7 +101,7 @@ class Bullet(pygame.sprite.Sprite):
     def collides_with_stone(self):
         tile_x = self.rect.centerx // TILE_SIZE
         tile_y = self.rect.centery // TILE_SIZE
-        if game_map[tile_y][tile_x] == 's':
+        if game_map.get_current_map()[tile_y][tile_x] == 's':
             return True
         return False
 
@@ -83,13 +129,26 @@ class Player(pygame.sprite.Sprite):
         if keys[self.controls['down']]:
             new_y += PLAYER_SPEED
             self.direction = 'down'
-        
+
         # Check for collision with stone tiles
         if not self.collides_with_stone(new_x, new_y):
             self.rect.topleft = (new_x, new_y)
+
+        # Check if player exits the map and load the adjacent map
+        if self.rect.right > SCREEN_WIDTH - 30:
+            game_map.move_to_adjacent_map('right')
+            self.rect.left = 32
+        elif self.rect.left < 30:
+            game_map.move_to_adjacent_map('left')
+            self.rect.right = SCREEN_WIDTH - 32
+        elif self.rect.bottom > SCREEN_HEIGHT - 30:
+            game_map.move_to_adjacent_map('down')
+            self.rect.top = 32
+        elif self.rect.top < 30:
+            game_map.move_to_adjacent_map('up')
+            self.rect.bottom = SCREEN_HEIGHT -32
     
     def collides_with_stone(self, x, y):
-        # Check all four corners of the player's bounding box
         corners = [
             (x, y),
             (x + self.rect.width - 1, y),
@@ -99,7 +158,7 @@ class Player(pygame.sprite.Sprite):
         for corner in corners:
             tile_x = corner[0] // TILE_SIZE
             tile_y = corner[1] // TILE_SIZE
-            if game_map[tile_y][tile_x] == 's':
+            if game_map.get_current_map()[tile_y][tile_x] == 's':
                 return True
         return False
     
@@ -157,9 +216,10 @@ class Monster(pygame.sprite.Sprite):
         for corner in corners:
             tile_x = corner[0] // TILE_SIZE
             tile_y = corner[1] // TILE_SIZE
-            if game_map[tile_y][tile_x] == 's':
+            if game_map.get_current_map()[tile_y][tile_x] == 's':
                 return True
         return False
+
 
 def game_over():
     font = pygame.font.Font(None, 74)
@@ -168,6 +228,7 @@ def game_over():
     pygame.display.flip()
     pygame.time.wait(2000)
     main()
+
 
 def main():
     global player1, player2, player_group, bullets, monsters
@@ -182,6 +243,8 @@ def main():
     monsters = pygame.sprite.Group()
     monsters.add(Monster(100, 100))
     monsters.add(Monster(500, 300))
+
+    
     
     # Main game loop
     while True:
@@ -219,7 +282,7 @@ def main():
         screen.fill((0, 0, 0))
         
         # Draw tiles from the map
-        for y, row in enumerate(game_map):
+        for y, row in enumerate(game_map.get_current_map()):
             for x, tile in enumerate(row):
                 if tile == 'g':
                     screen.blit(grass_image, (x * TILE_SIZE, y * TILE_SIZE))
