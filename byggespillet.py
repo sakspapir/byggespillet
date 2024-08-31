@@ -27,7 +27,9 @@ class Map:
         self.current_x = start_x
         self.current_y = start_y
         self.maps = {}
+        self.overlays = {}
         self.load_all_maps()
+        self.load_all_overlays()
 
     def load_all_maps(self):
         for filename in os.listdir('maps'):
@@ -55,10 +57,45 @@ class Map:
             game_map.append(row)
         return game_map
 
+    def load_all_overlays(self):
+        for filename in os.listdir('maps'):
+            if filename.startswith('overlay') and filename.endswith('.png'):
+                parts = filename[7:-4].split('-')
+                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                    x, y = int(parts[0]), int(parts[1])
+                    if (x, y) not in self.overlays:
+                        self.overlays[(x, y)] = []
+                    self.overlays[(x, y)].append(self.load_overlay_from_png(os.path.join('maps', filename)))
+
+    def load_overlay_from_png(self, file_path):
+        image = Image.open(file_path)
+        pixels = image.load()
+        width, height = image.size
+        overlay = []
+        for y in range(height):
+            row = []
+            for x in range(width):
+                r, g, b = pixels[x, y][:3]
+                if (r, g, b) == (255, 0, 0):  # Red color for monsters
+                    row.append('m')
+                elif (r, g, b) == (0, 0, 255):  # Blue color for items
+                    row.append('i')
+                else:
+                    row.append(None)  # No overlay
+            overlay.append(row)
+        return overlay
+
     def get_current_map(self):
         return self.maps.get((self.current_x, self.current_y))
 
+    def get_current_overlays(self):
+        return self.overlays.get((self.current_x, self.current_y), [])
+
     def move_to_adjacent_map(self, direction):
+        # Clear current monsters
+        monsters.empty()
+
+        # Move to the new map
         if direction == 'left':
             self.current_x -= 1
         elif direction == 'right':
@@ -67,7 +104,21 @@ class Map:
             self.current_y -= 1
         elif direction == 'down':
             self.current_y += 1
-        return self.get_current_map()
+
+        # Spawn monsters for the new map
+        self.spawn_monsters(self.get_current_overlays())
+        return self.get_current_map(), self.get_current_overlays()
+    
+    def get_current_overlays(self):
+        overlays = self.overlays.get((self.current_x, self.current_y), [])
+        return overlays
+
+    def spawn_monsters(self, overlays):
+        for overlay in overlays:
+            for y, row in enumerate(overlay):
+                for x, tile in enumerate(row):
+                    if tile == 'm':  # 'm' for monster
+                        monsters.add(Monster(x * TILE_SIZE, y * TILE_SIZE))
 
 game_map = Map(6, 9)  # Initialize with starting map coordinates
 
@@ -146,7 +197,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.top = 32
         elif self.rect.top < 30:
             game_map.move_to_adjacent_map('up')
-            self.rect.bottom = SCREEN_HEIGHT -32
+            self.rect.bottom = SCREEN_HEIGHT - 32
+
     
     def collides_with_stone(self, x, y):
         corners = [
@@ -241,11 +293,9 @@ def main():
     
     # Create monsters
     monsters = pygame.sprite.Group()
-    monsters.add(Monster(100, 100))
-    monsters.add(Monster(500, 300))
 
-    
-    
+    game_map.spawn_monsters(game_map.get_current_overlays())
+
     # Main game loop
     while True:
         for event in pygame.event.get():
@@ -288,7 +338,8 @@ def main():
                     screen.blit(grass_image, (x * TILE_SIZE, y * TILE_SIZE))
                 elif tile == 's':
                     screen.blit(stone_image, (x * TILE_SIZE, y * TILE_SIZE))
-        
+
+
         # Draw players, bullets, and monsters
         player_group.draw(screen)
         bullets.draw(screen)
