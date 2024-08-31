@@ -254,7 +254,13 @@ class Monster(pygame.sprite.Sprite):
             self.rect.topleft = (new_x, new_y)
         
         # Check for collision with players
-        if self.rect.colliderect(player1.rect) or self.rect.colliderect(player2.rect):
+        if self.rect.colliderect(player1.rect):
+            player1.kill()
+        if self.rect.colliderect(player2.rect):
+            player2.kill()
+        
+        # Check if both players are dead
+        if not player1.alive() and not player2.alive():
             game_over()
     
     def collides_with_stone(self, x, y):
