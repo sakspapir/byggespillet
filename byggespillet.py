@@ -1,4 +1,5 @@
 import pygame
+import math
 import sys
 import os
 from PIL import Image
@@ -234,17 +235,29 @@ class Monster(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
     
     def update(self):
-        # Move towards the player
-        if player1.rect.x < self.rect.x:
+        # Determine the closest player
+        if player1.alive() and player2.alive():
+            distance_to_player1 = math.sqrt((self.rect.x - player1.rect.x) ** 2 + (self.rect.y - player1.rect.y) ** 2)
+            distance_to_player2 = math.sqrt((self.rect.x - player2.rect.x) ** 2 + (self.rect.y - player2.rect.y) ** 2)
+            target_player = player1 if distance_to_player1 < distance_to_player2 else player2
+        elif player1.alive():
+            target_player = player1
+        elif player2.alive():
+            target_player = player2
+        else:
+            return  # No players alive, no need to move
+        
+        # Move towards the closest player
+        if target_player.rect.x < self.rect.x:
             new_x = self.rect.x - MONSTER_SPEED
-        elif player1.rect.x > self.rect.x:
+        elif target_player.rect.x > self.rect.x:
             new_x = self.rect.x + MONSTER_SPEED
         else:
             new_x = self.rect.x
         
-        if player1.rect.y < self.rect.y:
+        if target_player.rect.y < self.rect.y:
             new_y = self.rect.y - MONSTER_SPEED
-        elif player1.rect.y > self.rect.y:
+        elif target_player.rect.y > self.rect.y:
             new_y = self.rect.y + MONSTER_SPEED
         else:
             new_y = self.rect.y
