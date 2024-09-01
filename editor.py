@@ -11,6 +11,7 @@ GREEN = (0, 255, 0)
 GREY = (128, 128, 128)
 RED = (255, 0, 0)
 ZOOM_FACTOR = 10
+YELLOW = (255, 255, 0)
 
 # Initialize Pygame
 pygame.init()
@@ -45,11 +46,12 @@ def save_monster(x, y, image):
     transparent_image = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
     transparent_image.fill((0, 0, 0, 0))  # Fill with transparent color
 
-    # Copy only the red pixels from the original image
+    # Copy only the red and yellow pixels from the original image
     for i in range(TILE_SIZE):
         for j in range(TILE_SIZE):
-            if image.get_at((i, j))[:3] == RED:
-                transparent_image.set_at((i, j), RED + (255,))  # Set red pixel with full opacity
+            color = image.get_at((i, j))[:3]
+            if color == RED or color == YELLOW:
+                transparent_image.set_at((i, j), color + (255,))  # Set pixel with full opacity
 
     file_path = os.path.join('maps', f'{x}-{y}-monster.png')
     pygame.image.save(transparent_image, file_path)
@@ -105,11 +107,18 @@ def open_zoomed_map(image, x, y, monster_image=None):
                 else:
                     zx //= ZOOM_FACTOR
                     zy //= ZOOM_FACTOR
-                    if event.button == 3:  # Right click to change color or place/remove monster
+                    if event.button == 3:  # Right click to change color or place/remove monster/bunny
                         if monster_mode:
                             current_color = zoomed_monster_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
                             if current_color == RED:
-                                # Remove monster
+                                # Change monster to bunny
+                                for i in range(ZOOM_FACTOR):
+                                    for j in range(ZOOM_FACTOR):
+                                        zoomed_monster_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), YELLOW + (255,))  # Set yellow pixel with full opacity
+                                scaled_down_image = pygame.transform.scale(zoomed_monster_image, (TILE_SIZE, TILE_SIZE))
+                                save_monster(x, y, scaled_down_image)
+                            elif current_color == YELLOW:
+                                # Remove bunny
                                 for i in range(ZOOM_FACTOR):
                                     for j in range(ZOOM_FACTOR):
                                         zoomed_monster_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), (0, 0, 0, 0))  # Set to transparent
