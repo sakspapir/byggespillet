@@ -9,6 +9,7 @@ TILE_SIZE = 32
 GRID_COLOR = (200, 200, 200)
 GREEN = (0, 255, 0)
 GREY = (128, 128, 128)
+RED = (255, 0, 0)
 ZOOM_FACTOR = 10
 
 # Initialize Pygame
@@ -32,6 +33,11 @@ def save_map(x, y, image):
     file_path = os.path.join('maps', f'{x}-{y}-map.png')
     pygame.image.save(image, file_path)
 
+# Save monster image
+def save_monster(x, y, image):
+    file_path = os.path.join('maps', f'{x}-{y}-monster.png')
+    pygame.image.save(image, file_path)
+
 # Draw grid
 def draw_grid():
     for x in range(0, SCREEN_WIDTH, TILE_SIZE):
@@ -52,6 +58,12 @@ def open_zoomed_map(image, x, y):
     zoomed_screen = pygame.display.set_mode((zoomed_image.get_width(), zoomed_image.get_height()))
     pygame.display.set_caption(f'Zoomed Map {x}-{y}')
 
+    mode_button_rect = pygame.Rect(zoomed_image.get_width() - 100, 10, 90, 30)
+    mode_button_color = GREY
+    mode_text_color = GREEN
+    mode_text = 'Map mode'
+    monster_mode = False
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -59,17 +71,32 @@ def open_zoomed_map(image, x, y):
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 zx, zy = event.pos
-                zx //= ZOOM_FACTOR
-                zy //= ZOOM_FACTOR
-                if event.button == 3:  # Right click to change color
-                    current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
-                    next_color = GREEN if current_color == GREY else GREY
-                    for i in range(ZOOM_FACTOR):
-                        for j in range(ZOOM_FACTOR):
-                            zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), next_color)
-                    image.set_at((zx, zy), next_color)
+                if mode_button_rect.collidepoint(zx, zy):
+                    monster_mode = not monster_mode
+                    mode_text = 'Monster mode' if monster_mode else 'Map mode'
+                else:
+                    zx //= ZOOM_FACTOR
+                    zy //= ZOOM_FACTOR
+                    if event.button == 3:  # Right click to change color or place monster
+                        if monster_mode:
+                            for i in range(ZOOM_FACTOR):
+                                for j in range(ZOOM_FACTOR):
+                                    zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), RED)
+                            scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
+                            save_monster(x, y, scaled_down_image)
+                        else:
+                            current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
+                            next_color = GREEN if current_color == GREY else GREY
+                            for i in range(ZOOM_FACTOR):
+                                for j in range(ZOOM_FACTOR):
+                                    zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), next_color)
+                            image.set_at((zx, zy), next_color)
 
         zoomed_screen.blit(zoomed_image, (0, 0))
+        pygame.draw.rect(zoomed_screen, mode_button_color, mode_button_rect)
+        font = pygame.font.Font(None, 24)
+        text_surface = font.render(mode_text, True, mode_text_color)
+        zoomed_screen.blit(text_surface, (mode_button_rect.x + 5, mode_button_rect.y + 5))
         pygame.display.flip()
 
     save_map(x, y, image)
