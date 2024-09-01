@@ -17,16 +17,21 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Map Editor')
 
-# Load map images
 def load_maps():
     maps = {}
+    monsters = {}
     for filename in os.listdir('maps'):
         if filename.endswith('-map.png'):
             parts = filename[:-8].split('-')
             if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
                 x, y = int(parts[0]), int(parts[1])
                 maps[(x, y)] = pygame.image.load(os.path.join('maps', filename))
-    return maps
+        elif filename.endswith('-monster.png'):
+            parts = filename[:-12].split('-')
+            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                x, y = int(parts[0]), int(parts[1])
+                monsters[(x, y)] = pygame.image.load(os.path.join('maps', filename))
+    return maps, monsters
 
 # Save map image
 def save_map(x, y, image):
@@ -35,8 +40,18 @@ def save_map(x, y, image):
 
 # Save monster image
 def save_monster(x, y, image):
+    # Create a new image with transparency
+    transparent_image = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+    transparent_image.fill((0, 0, 0, 0))  # Fill with transparent color
+
+    # Copy only the red pixels from the original image
+    for i in range(TILE_SIZE):
+        for j in range(TILE_SIZE):
+            if image.get_at((i, j))[:3] == RED:
+                transparent_image.set_at((i, j), RED + (255,))  # Set red pixel with full opacity
+
     file_path = os.path.join('maps', f'{x}-{y}-monster.png')
-    pygame.image.save(image, file_path)
+    pygame.image.save(transparent_image, file_path)
 
 # Draw grid
 def draw_grid():
@@ -52,10 +67,16 @@ def create_new_map_image():
     pygame.draw.rect(image, GREY, image.get_rect(), 1)
     return image
 
+
+
 # Open zoomed map window
-def open_zoomed_map(image, x, y):
+def open_zoomed_map(image, x, y, monster_image=None):
     zoomed_image = pygame.transform.scale(image, (image.get_width() * ZOOM_FACTOR, image.get_height() * ZOOM_FACTOR))
-    
+    if monster_image:
+        zoomed_monster_image = pygame.transform.scale(monster_image, (monster_image.get_width() * ZOOM_FACTOR, monster_image.get_height() * ZOOM_FACTOR))
+    else:
+        zoomed_monster_image = None
+
     # Increase the window width to accommodate the button
     window_width = zoomed_image.get_width() + 150
     zoomed_screen = pygame.display.set_mode((window_width, zoomed_image.get_height()))
@@ -107,6 +128,8 @@ def open_zoomed_map(image, x, y):
                             image.set_at((zx, zy), next_color)
 
         zoomed_screen.blit(zoomed_image, (0, 0))
+        if monster_mode and zoomed_monster_image:
+            zoomed_screen.blit(zoomed_monster_image, (0, 0))
         pygame.draw.rect(zoomed_screen, mode_button_color, mode_button_rect)
         font = pygame.font.Font(None, 24)
         text_surface = font.render(mode_text, True, mode_text_color)
@@ -119,7 +142,7 @@ def open_zoomed_map(image, x, y):
 
 # Main loop
 def main():
-    maps = load_maps()
+    maps, monsters = load_maps()
     running = True
 
     while running:
@@ -139,7 +162,7 @@ def main():
                 if (x, y) not in maps:
                     maps[(x, y)] = create_new_map_image()
                     save_map(x, y, maps[(x, y)])
-                open_zoomed_map(maps[(x, y)], x, y)
+                open_zoomed_map(maps[(x, y)], x, y, monsters.get((x, y)))
 
         pygame.display.flip()
 
