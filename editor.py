@@ -37,6 +37,7 @@ def load_maps():
 def save_map(x, y, image):
     file_path = os.path.join('maps', f'{x}-{y}-map.png')
     pygame.image.save(image, file_path)
+    maps[(x, y)] = pygame.image.load(file_path)  # Reload the modified map
 
 # Save monster image
 def save_monster(x, y, image):
@@ -52,6 +53,7 @@ def save_monster(x, y, image):
 
     file_path = os.path.join('maps', f'{x}-{y}-monster.png')
     pygame.image.save(transparent_image, file_path)
+    monsters[(x, y)] = pygame.image.load(file_path)  # Reload the modified monster
 
 # Draw grid
 def draw_grid():
@@ -143,6 +145,7 @@ def open_zoomed_map(image, x, y, monster_image=None):
 
 # Main loop
 def main():
+    global maps, monsters
     maps, monsters = load_maps()
     running = True
 
