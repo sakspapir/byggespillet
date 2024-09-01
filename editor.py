@@ -53,7 +53,6 @@ def create_new_map_image():
     return image
 
 # Open zoomed map window
-# Open zoomed map window
 def open_zoomed_map(image, x, y):
     zoomed_image = pygame.transform.scale(image, (image.get_width() * ZOOM_FACTOR, image.get_height() * ZOOM_FACTOR))
     
@@ -82,13 +81,23 @@ def open_zoomed_map(image, x, y):
                 else:
                     zx //= ZOOM_FACTOR
                     zy //= ZOOM_FACTOR
-                    if event.button == 3:  # Right click to change color or place monster
+                    if event.button == 3:  # Right click to change color or place/remove monster
                         if monster_mode:
-                            for i in range(ZOOM_FACTOR):
-                                for j in range(ZOOM_FACTOR):
-                                    zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), RED)
-                            scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
-                            save_monster(x, y, scaled_down_image)
+                            current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
+                            if current_color == RED:
+                                # Remove monster
+                                for i in range(ZOOM_FACTOR):
+                                    for j in range(ZOOM_FACTOR):
+                                        zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), GREEN)
+                                scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
+                                save_monster(x, y, scaled_down_image)
+                            else:
+                                # Place monster
+                                for i in range(ZOOM_FACTOR):
+                                    for j in range(ZOOM_FACTOR):
+                                        zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), RED)
+                                scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
+                                save_monster(x, y, scaled_down_image)
                         else:
                             current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
                             next_color = GREEN if current_color == GREY else GREY
