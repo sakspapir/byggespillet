@@ -53,12 +53,17 @@ def create_new_map_image():
     return image
 
 # Open zoomed map window
+# Open zoomed map window
 def open_zoomed_map(image, x, y):
     zoomed_image = pygame.transform.scale(image, (image.get_width() * ZOOM_FACTOR, image.get_height() * ZOOM_FACTOR))
-    zoomed_screen = pygame.display.set_mode((zoomed_image.get_width(), zoomed_image.get_height()))
+    
+    # Increase the window width to accommodate the button
+    window_width = zoomed_image.get_width() + 150
+    zoomed_screen = pygame.display.set_mode((window_width, zoomed_image.get_height()))
     pygame.display.set_caption(f'Zoomed Map {x}-{y}')
 
-    mode_button_rect = pygame.Rect(zoomed_image.get_width() - 100, 10, 90, 30)
+    # Place the button to the right of the map area
+    mode_button_rect = pygame.Rect(zoomed_image.get_width() + 10, 10, 90, 30)
     mode_button_color = GREY
     mode_text_color = GREEN
     mode_text = 'Map mode'
