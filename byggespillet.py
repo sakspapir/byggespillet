@@ -190,15 +190,23 @@ class Player(pygame.sprite.Sprite):
         if self.rect.right > SCREEN_WIDTH - 30:
             game_map.move_to_adjacent_map('right')
             self.rect.left = 32
+            player1.rect.topleft = self.rect.topleft
+            player2.rect.topleft = self.rect.topleft
         elif self.rect.left < 30:
             game_map.move_to_adjacent_map('left')
             self.rect.right = SCREEN_WIDTH - 32
+            player1.rect.topleft = self.rect.topleft
+            player2.rect.topleft = self.rect.topleft
         elif self.rect.bottom > SCREEN_HEIGHT - 30:
             game_map.move_to_adjacent_map('down')
             self.rect.top = 32
+            player1.rect.topleft = self.rect.topleft
+            player2.rect.topleft = self.rect.topleft
         elif self.rect.top < 30:
             game_map.move_to_adjacent_map('up')
             self.rect.bottom = SCREEN_HEIGHT - 32
+            player1.rect.topleft = self.rect.topleft
+            player2.rect.topleft = self.rect.topleft
 
     
     def collides_with_stone(self, x, y):
