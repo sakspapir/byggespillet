@@ -75,7 +75,8 @@ def open_zoomed_map(image, x, y, monster_image=None):
     if monster_image:
         zoomed_monster_image = pygame.transform.scale(monster_image, (monster_image.get_width() * ZOOM_FACTOR, monster_image.get_height() * ZOOM_FACTOR))
     else:
-        zoomed_monster_image = None
+        zoomed_monster_image = pygame.Surface(zoomed_image.get_size(), pygame.SRCALPHA)
+        zoomed_monster_image.fill((0, 0, 0, 0))  # Fill with transparent color
 
     # Increase the window width to accommodate the button
     window_width = zoomed_image.get_width() + 150
@@ -104,20 +105,20 @@ def open_zoomed_map(image, x, y, monster_image=None):
                     zy //= ZOOM_FACTOR
                     if event.button == 3:  # Right click to change color or place/remove monster
                         if monster_mode:
-                            current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
+                            current_color = zoomed_monster_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
                             if current_color == RED:
                                 # Remove monster
                                 for i in range(ZOOM_FACTOR):
                                     for j in range(ZOOM_FACTOR):
-                                        zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), GREEN)
-                                scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
+                                        zoomed_monster_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), (0, 0, 0, 0))  # Set to transparent
+                                scaled_down_image = pygame.transform.scale(zoomed_monster_image, (TILE_SIZE, TILE_SIZE))
                                 save_monster(x, y, scaled_down_image)
                             else:
                                 # Place monster
                                 for i in range(ZOOM_FACTOR):
                                     for j in range(ZOOM_FACTOR):
-                                        zoomed_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), RED)
-                                scaled_down_image = pygame.transform.scale(zoomed_image, (TILE_SIZE, TILE_SIZE))
+                                        zoomed_monster_image.set_at((zx * ZOOM_FACTOR + i, zy * ZOOM_FACTOR + j), RED + (255,))  # Set red pixel with full opacity
+                                scaled_down_image = pygame.transform.scale(zoomed_monster_image, (TILE_SIZE, TILE_SIZE))
                                 save_monster(x, y, scaled_down_image)
                         else:
                             current_color = zoomed_image.get_at((zx * ZOOM_FACTOR, zy * ZOOM_FACTOR))[:3]
@@ -128,7 +129,7 @@ def open_zoomed_map(image, x, y, monster_image=None):
                             image.set_at((zx, zy), next_color)
 
         zoomed_screen.blit(zoomed_image, (0, 0))
-        if monster_mode and zoomed_monster_image:
+        if monster_mode:
             zoomed_screen.blit(zoomed_monster_image, (0, 0))
         pygame.draw.rect(zoomed_screen, mode_button_color, mode_button_rect)
         font = pygame.font.Font(None, 24)
