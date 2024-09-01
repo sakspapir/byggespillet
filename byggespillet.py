@@ -22,6 +22,7 @@ grass_image = pygame.image.load('grass.png')
 stone_image = pygame.image.load('stone.png')
 bullet_image = pygame.image.load('bullet.png')
 monster_image = pygame.image.load('monster.png')
+bunny_image = pygame.image.load('bunny.png')
 
 class Map:
     def __init__(self, start_x, start_y):
@@ -79,6 +80,8 @@ class Map:
                 r, g, b = pixels[x, y][:3]
                 if (r, g, b) == (255, 0, 0):  # Red color for monsters
                     row.append('m')
+                elif (r, g, b) == (255, 255, 0):  # Yellow color for bunnies
+                    row.append('b')
                 elif (r, g, b) == (0, 0, 255):  # Blue color for items
                     row.append('i')
                 else:
@@ -120,6 +123,8 @@ class Map:
                 for x, tile in enumerate(row):
                     if tile == 'm':  # 'm' for monster
                         monsters.add(Monster(x * TILE_SIZE, y * TILE_SIZE))
+                    elif tile == 'b':  # 'b' for bunny
+                        monsters.add(Bunny(x * TILE_SIZE, y * TILE_SIZE))
 
 game_map = Map(6, 9)  # Initialize with starting map coordinates
 
@@ -233,6 +238,71 @@ class Player(pygame.sprite.Sprite):
         elif self.direction == 'down':
             bullet = Bullet(self.rect.centerx - 5, self.rect.bottom, 'down')
         bullets.add(bullet)
+
+class Bunny(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = bunny_image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+    
+    def update(self):
+        # Determine the closest player
+        if player1.alive() and player2.alive():
+            distance_to_player1 = math.sqrt((self.rect.x - player1.rect.x) ** 2 + (self.rect.y - player1.rect.y) ** 2)
+            distance_to_player2 = math.sqrt((self.rect.x - player2.rect.x) ** 2 + (self.rect.y - player2.rect.y) ** 2)
+            target_player = player1 if distance_to_player1 < distance_to_player2 else player2
+        elif player1.alive():
+            target_player = player1
+        elif player2.alive():
+            target_player = player2
+        else:
+            return  # No players alive, no need to move
+        
+        # Move towards the closest player
+        if target_player.rect.x < self.rect.x:
+            new_x = self.rect.x - MONSTER_SPEED
+        elif target_player.rect.x > self.rect.x:
+            new_x = self.rect.x + MONSTER_SPEED
+        else:
+            new_x = self.rect.x
+        
+        if target_player.rect.y < self.rect.y:
+            new_y = self.rect.y - MONSTER_SPEED
+        elif target_player.rect.y > self.rect.y:
+            new_y = self.rect.y + MONSTER_SPEED
+        else:
+            new_y = self.rect.y
+        
+        # Check for collision with stone tiles
+        if not self.collides_with_stone(new_x, new_y):
+            self.rect.topleft = (new_x, new_y)
+        
+        # Check for collision with players
+        if self.rect.colliderect(player1.rect):
+            player1.kill()
+        if self.rect.colliderect(player2.rect):
+            player2.kill()
+        
+        # Check if both players are dead
+        if not player1.alive() and not player2.alive():
+            game_over()
+    
+    def collides_with_stone(self, x, y):
+        # Check all four corners of the bunny's bounding box
+        corners = [
+            (x, y),
+            (x + self.rect.width - 1, y),
+            (x, y + self.rect.height - 1),
+            (x + self.rect.width - 1, y + self.rect.height - 1)
+        ]
+        for corner in corners:
+            tile_x = corner[0] // TILE_SIZE
+            tile_y = corner[1] // TILE_SIZE
+            if game_map.get_current_map()[tile_y][tile_x] == 's':
+                return True
+        return False
+
 
 # Monster class
 class Monster(pygame.sprite.Sprite):
