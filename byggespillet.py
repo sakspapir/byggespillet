@@ -313,8 +313,8 @@ def main():
     global player1, player2, player_group, bullets, monsters
 
     # Create player instances
-    player1 = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RCTRL}, player_image)
-    player2 = Player(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2, {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_g}, player2_image)
+    player1 = Player(2*50, 3*50, {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RCTRL}, player_image)
+    player2 = Player(2*50, 2*50, {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_g}, player2_image)
     player_group = pygame.sprite.Group(player1, player2)
     bullets = pygame.sprite.Group()
     
