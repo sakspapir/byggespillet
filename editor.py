@@ -39,6 +39,13 @@ def draw_grid():
     for y in range(0, SCREEN_HEIGHT, TILE_SIZE):
         pygame.draw.line(screen, GRID_COLOR, (0, y), (SCREEN_WIDTH, y))
 
+# Create a new map image with green background and grey frame
+def create_new_map_image():
+    image = pygame.Surface((TILE_SIZE, TILE_SIZE))
+    image.fill(GREEN)
+    pygame.draw.rect(image, GREY, image.get_rect(), 1)
+    return image
+
 # Open zoomed map window
 def open_zoomed_map(image, x, y):
     zoomed_image = pygame.transform.scale(image, (image.get_width() * ZOOM_FACTOR, image.get_height() * ZOOM_FACTOR))
@@ -88,8 +95,10 @@ def main():
                 x, y = event.pos
                 x //= TILE_SIZE
                 y //= TILE_SIZE
-                if (x, y) in maps:
-                    open_zoomed_map(maps[(x, y)], x, y)
+                if (x, y) not in maps:
+                    maps[(x, y)] = create_new_map_image()
+                    save_map(x, y, maps[(x, y)])
+                open_zoomed_map(maps[(x, y)], x, y)
 
         pygame.display.flip()
 

@@ -8,8 +8,8 @@ from PIL import Image
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 480
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 1024
 TILE_SIZE = 32
 PLAYER_SPEED = TILE_SIZE // 10  # Adjusted speed
 BULLET_SPEED = 5
