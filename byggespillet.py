@@ -34,8 +34,8 @@ class Map:
 
     def load_all_maps(self):
         for filename in os.listdir('maps'):
-            if filename.startswith('map') and filename.endswith('.png'):
-                parts = filename[3:-4].split('-')
+            if filename.endswith('-map.png'):
+                parts = filename[:-8].split('-')
                 if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
                     x, y = int(parts[0]), int(parts[1])
                     self.maps[(x, y)] = self.load_map_from_png(os.path.join('maps', filename))
@@ -60,8 +60,8 @@ class Map:
 
     def load_all_overlays(self):
         for filename in os.listdir('maps'):
-            if filename.startswith('overlay') and filename.endswith('.png'):
-                parts = filename[7:-4].split('-')
+            if filename.endswith('-monster.png'):
+                parts = filename[:-12].split('-')
                 if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
                     x, y = int(parts[0]), int(parts[1])
                     if (x, y) not in self.overlays:
